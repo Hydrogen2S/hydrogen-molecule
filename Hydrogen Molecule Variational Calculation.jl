@@ -325,7 +325,7 @@ end
     
     # 保存图片用的
     # """
-#    Rs = 0.8:0.002:3.0  # 核间距范围
+#    Rs = 0.8:0.002:3.0 
 #    times = Float64[]
     
     # 测量每个R的计算时间
@@ -337,7 +337,7 @@ end
 #    @info "\n计算时间测量完成"
     
 
-#    Rs = 0.8:0.1:3.0  # 增大步长减少波动
+#    Rs = 0.8:0.1:3.0 
 #    times = [mean(@elapsed solve_variational(R) for _ in 1:5) for R in Rs]
 #    avg_time = mean(times)
 #    percent_error = std(times) / avg_time * 100
@@ -399,23 +399,23 @@ end
 #visualize_electron_cloud(1.4, L=4.0, n3d=50, n2d=80, save_plot=true)
 #visualize_electron_cloud(3.0, L=4.0, n3d=50, n2d=80, save_plot=true)  
 plot_computation_time_curve()  
-# 新增R=0.8的可视化
+# R=0.8
 visualize_electron_cloud(0.8, L=4.0, n3d=50, n2d=80, name="08_electron_cloud.png", save_plot=true)
 
-# 计算R=1.4时的基态能量
+# R=1.4基态能量
 energy_1_4 = solve_variational(1.4).energy
 @info "氢原子基态能量 (R=1.4): $(energy_1_4) Hartree"
 
-# 氢原子基态能量（理论值-0.5 Hartree）
+# 氢原子基态能量  理论-0.5 Hartree
 #@info "Hydrogen atom ground state energy: -0.5 Hartree"
 #@test isapprox(solve_variational(1.4).energy, -1.16, atol=0.05)
-#@test isapprox(solve_variational(Inf).energy, -1.0, atol=0.01)  # 解离极限验证
+#@test isapprox(solve_variational(Inf).energy, -1.0, atol=0.01)  
 
-# 计算解离极限能量应趋近于两个氢原子总能量
+# 计算解离极限能量-应趋近于两个氢原子总能量
 #energy_inf = solve_variational(100.0).energy
 #@info "R=100时基态能量: $(energy_inf)"
-#@assert isapprox(energy_inf, -1.0, atol=0.1)  # 调大容差以容忍受限数值积
-# 验证解离极限能量收敛性
+#@assert isapprox(energy_inf, -1.0, atol=0.1)  
+
 function validate_dissociation_limit()
     R_values = [50.0, 100.0, 200.0]
     for R in R_values
@@ -427,6 +427,6 @@ end
 
 validate_dissociation_limit()
 
-# 核间距设置为极大值（R=200原子单位）
+# 核间距设置为极大值 R=200原子单位
 energy_inf = solve_variational(200.0).energy
 @assert isapprox(energy_inf, -1.0, atol=0.01)
