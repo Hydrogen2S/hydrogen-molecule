@@ -271,7 +271,7 @@ end
 
 
 # 改进计时方法（预编译+统计预热）
-function plot_computation_time_curve()
+function computation_time_curve()
     #solve_variational(1.4)  # 预编译
     Rs = 0.1:0.1:19.0
     
@@ -307,12 +307,14 @@ end
 
 
 # ------------------------- 图表 -------------------------
+computation_time_curve()
 
 # 图1：氢分子电子云分布（R = 1.4原子单位）
 visualize_electron_cloud(1.4, L=4.0, n3d=50, n2d=160, save_plot=true)
 
+
+# 图2：核间距对电子云分布的影响（R = 1.4 vs. R = 3.0原子单位）
 let
-    # 图2：核间距对电子云分布的影响（R = 1.4 vs. R = 3.0原子单位）
     fig2 = Figure(size=(2400, 800), backgroundcolor=:white)
 
     # R = 0.8
@@ -386,7 +388,7 @@ end
 
 #visualize_electron_cloud(1.4, L=4.0, n3d=50, n2d=80, save_plot=true)
 #visualize_electron_cloud(3.0, L=4.0, n3d=50, n2d=80, save_plot=true)  
-plot_computation_time_curve()  
+
 # R=0.8
 visualize_electron_cloud(0.8, L=4.0, n3d=50, n2d=160, name="08_electron_cloud.png", save_plot=true)
 
