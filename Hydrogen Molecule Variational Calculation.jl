@@ -2,6 +2,7 @@ using LinearAlgebra, QuadGK, GLMakie, LoopVectorization, Base.Threads
 # 统计包
 using Statistics
 using Test
+@info "开始啦！"
 # ------------------------- 波函数 -------------------------
 @inline ψ_1s(r) = @fastmath exp(-r) / sqrt(π)
 
@@ -119,7 +120,7 @@ function compute_2d_density!(density2d, x2d, y2d, z2d, R, coeff)
 end
 
 # ------------------------- 可视化绘图（三维`截面）------------
-function visualize_electron_cloud(R=1.4; L=4.0, n3d=50, n2d=80, name="electron_cloud_plot.png", save_plot=false)
+function visualize_electron_cloud(R=1.4; L=4.0, n3d=100, n2d=160, name="electron_cloud_plot.png", save_plot=false)
     """
     可视化氢分子的电子云密度分布
     
@@ -133,7 +134,7 @@ function visualize_electron_cloud(R=1.4; L=4.0, n3d=50, n2d=80, name="electron_c
     直接绘图用
     """
     result = solve_variational(R)
-    @info "变分结果：" R result.energy result.coeff
+    #@info "变分结果：" R result.energy result.coeff
 
     # ========== 变量们 ==========
     x3d = range(-L, L, n3d)
@@ -233,65 +234,10 @@ function visualize_electron_cloud(R=1.4; L=4.0, n3d=50, n2d=80, name="electron_c
 
     if save_plot
         save(name, fig, px_per_unit=3)
-        @info "核间电子密度为$(density2d[:, :, mid_idx][int(length(density2d[:, :, mid_idx])/2)]),最大为$(maximum(density2d[:, :, mid_idx]))\n图片已保存为$name" 
+        @info "核间距R = $R\n\t核间电子密度为$(density2d[:, :, mid_idx][int(length(density2d[:, :, mid_idx])/2)])\n\t最大为$(maximum(density2d[:, :, mid_idx]))\n\t图片已保存为$name" 
     end
 
     fig
-end
-
-# ------------------------- 图表 -------------------------
-
-# 图1：氢分子电子云分布（R = 1.4原子单位）
-visualize_electron_cloud(1.4, L=4.0, n3d=500, n2d=800, save_plot=true)
-
-let
-    # 图2：核间距对电子云分布的影响（R = 1.4 vs. R = 3.0原子单位）
-    fig2 = Figure(size=(1600, 800), backgroundcolor=:white)
-
-    # R = 1.4
-    ax1 = Axis3(fig2[1, 1], 
-        title="R = 1.4 a.u.", 
-        titlesize=36,
-        viewmode=:fitzoom,
-        perspectiveness=0.5,
-        limits=(-4, 4, -4, 4, -4, 4),
-        backgroundcolor=:white
-    )
-    density3d_1 = zeros(Float64, 50, 50, 50)
-    compute_3d_density!(density3d_1, range(-4, 4, 50), range(-4, 4, 50), range(-4, 4, 50), 1.4, [0.7, 0.7])
-    volume!(
-        ax1,
-        (-4, 4), (-4, 4), (-4, 4),
-        density3d_1,
-        algorithm=:mip,
-        colormap=:inferno,
-        colorrange=(0, 1*maximum(density3d_1)),
-        transparency=false
-    )
-
-    # R = 3.0
-    ax2 = Axis3(fig2[1, 2], 
-        title="R = 3.0 a.u.", 
-        titlesize=36,
-        viewmode=:fitzoom,
-        perspectiveness=0.5,
-        limits=(-4, 4, -4, 4, -4, 4),
-        backgroundcolor=:white
-    )
-    density3d_2 = zeros(Float64, 50, 50, 50)
-    compute_3d_density!(density3d_2, range(-4, 4, 50), range(-4, 4, 50), range(-4, 4, 50), 3.0, [0.7, 0.7])
-    volume!(
-        ax2,
-        (-4, 4), (-4, 4), (-4, 4),
-        density3d_2,
-        algorithm=:mip,
-        colormap=:inferno,
-        colorrange=(0, 1*maximum(density3d_2)),
-        transparency=false
-    )
-
-    save("electron_cloud_comparison.png", fig2, px_per_unit=3)
-    @info "图2已保存为 electron_cloud_comparison.png"
 end
 
 # ------------------------- 性能分析 -------------------------
@@ -359,21 +305,104 @@ function plot_computation_time_curve()
     @info "计算时间曲线已保存为 computation_time_curve.png"
 end
 
+
+# ------------------------- 图表 -------------------------
+
+# 图1：氢分子电子云分布（R = 1.4原子单位）
+visualize_electron_cloud(1.4, L=4.0, n3d=50, n2d=160, save_plot=true)
+
+let
+    # 图2：核间距对电子云分布的影响（R = 1.4 vs. R = 3.0原子单位）
+    fig2 = Figure(size=(2400, 800), backgroundcolor=:white)
+
+    # R = 0.8
+    ax1 = Axis3(fig2[1, 1], 
+        title="R = 0.8 a.u.", 
+        titlesize=36,
+        viewmode=:fitzoom,
+        perspectiveness=0.5,
+        limits=(-4, 4, -4, 4, -4, 4),
+        backgroundcolor=:white
+    )
+    density3d_1 = zeros(Float64, 50, 50, 50)
+    compute_3d_density!(density3d_1, range(-4, 4, 50), range(-4, 4, 50), range(-4, 4, 50), 0.8, [0.7, 0.7])
+    volume!(
+        ax1,
+        (-4, 4), (-4, 4), (-4, 4),
+        density3d_1,
+        algorithm=:mip,
+        colormap=:inferno,
+        colorrange=(0, 1*maximum(density3d_1)),
+        transparency=false
+    )
+
+    # R = 1.4
+    ax2 = Axis3(fig2[1, 2], 
+        title="R = 1.4 a.u.", 
+        titlesize=36,
+        viewmode=:fitzoom,
+        perspectiveness=0.5,
+        limits=(-4, 4, -4, 4, -4, 4),
+        backgroundcolor=:white
+    )
+    density3d_2 = zeros(Float64, 50, 50, 50)
+    compute_3d_density!(density3d_2, range(-4, 4, 50), range(-4, 4, 50), range(-4, 4, 50), 1.4, [0.7, 0.7])
+    volume!(
+        ax2,
+        (-4, 4), (-4, 4), (-4, 4),
+        density3d_2,
+        algorithm=:mip,
+        colormap=:inferno,
+        colorrange=(0, 1*maximum(density3d_2)),
+        transparency=false
+    )
+
+    # R = 3.0
+    ax3 = Axis3(fig2[1, 3], 
+        title="R = 3.0 a.u.", 
+        titlesize=36,
+        viewmode=:fitzoom,
+        perspectiveness=0.5,
+        limits=(-4, 4, -4, 4, -4, 4),
+        backgroundcolor=:white
+    )
+    density3d_3 = zeros(Float64, 50, 50, 50)
+    compute_3d_density!(density3d_3, range(-4, 4, 50), range(-4, 4, 50), range(-4, 4, 50), 3.0, [0.7, 0.7])
+    volume!(
+        ax3,
+        (-4, 4), (-4, 4), (-4, 4),
+        density3d_3,
+        algorithm=:mip,
+        colormap=:inferno,
+        colorrange=(0, 1*maximum(density3d_3)),
+        transparency=false
+    )
+
+    save("electron_cloud_comparison.png", fig2, px_per_unit=3)
+    @info "图2已保存为 electron_cloud_comparison.png"
+
+end
 # ------------------------- 最后的东西 -------------------------
 
 #visualize_electron_cloud(1.4, L=4.0, n3d=50, n2d=80, save_plot=true)
 #visualize_electron_cloud(3.0, L=4.0, n3d=50, n2d=80, save_plot=true)  
 plot_computation_time_curve()  
 # R=0.8
-visualize_electron_cloud(0.8, L=4.0, n3d=50, n2d=80, name="08_electron_cloud.png", save_plot=true)
+visualize_electron_cloud(0.8, L=4.0, n3d=50, n2d=160, name="08_electron_cloud.png", save_plot=true)
 
 # R=1.4基态能量
 energy_1_4 = solve_variational(1.4).energy
 @info "氢原子基态能量 (R=1.4): $(energy_1_4) Hartree"
 
+# R=0.8基态能量
+energy_0_8 = solve_variational(0.8).energy
+@info "氢原子基态能量 (R=0.8): $(energy_0_8) Hartree"
 
+# R=3.0基态能量
+energy_3_0 = solve_variational(3).energy
+@info "氢原子基态能量 (R=3): $(energy_3_0) Hartree"
 function validate_dissociation_limit()
-    R_values = [50.0, 100.0, 200.0]
+    R_values = [30.0, 100.0, 200.0]
     for R in R_values
         energy = solve_variational(R).energy
         @assert isapprox(energy, -1.0, atol=0.05) "解离极限能量异常 R=$R 结果: $energy"
