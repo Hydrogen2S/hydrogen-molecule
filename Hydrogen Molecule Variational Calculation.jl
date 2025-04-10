@@ -1,5 +1,5 @@
 using LinearAlgebra, QuadGK, GLMakie, LoopVectorization, Base.Threads
-# 添加统计包导入
+# 统计包
 using Statistics
 using Test
 # ------------------------- 波函数 -------------------------
@@ -40,7 +40,7 @@ function build_hamiltonian(R)
     J = coulomb_integral(R)
     K = exchange_integral(R)
     
-    # 更正为严密的Heitler-London公式 (单位: Hartree)
+    # 严密的Heitler-London公式 (单位: Hartree)
     α = -1.0  # 单原子能量项
     β = (S - J - (1 + S)*K) / (1 + S)^2
     H11 = α + β
@@ -211,7 +211,10 @@ function visualize_electron_cloud(R=1.4; L=4.0, n3d=50, n2d=80, name="electron_c
         @view(density2d[mid_idx, :, :]), 
         colormap=:inferno
     )
-
+    function int(x::AbstractFloat)
+        i = round(x)
+        return Int64(i)
+    end
     # 颜色条
     Colorbar(grid[1:2, 3], hm_xy, 
         label="电子密度", 
@@ -230,7 +233,7 @@ function visualize_electron_cloud(R=1.4; L=4.0, n3d=50, n2d=80, name="electron_c
 
     if save_plot
         save(name, fig, px_per_unit=3)
-        @info "图片已保存为$name" 
+        @info "核间电子密度为$(density2d[:, :, mid_idx][int(length(density2d[:, :, mid_idx])/2)]),最大为$(maximum(density2d[:, :, mid_idx]))\n图片已保存为$name" 
     end
 
     fig
@@ -241,53 +244,55 @@ end
 # 图1：氢分子电子云分布（R = 1.4原子单位）
 visualize_electron_cloud(1.4, L=4.0, n3d=500, n2d=800, save_plot=true)
 
-# 图2：核间距对电子云分布的影响（R = 1.4 vs. R = 3.0原子单位）
-fig2 = Figure(size=(1600, 800), backgroundcolor=:white)
+let
+    # 图2：核间距对电子云分布的影响（R = 1.4 vs. R = 3.0原子单位）
+    fig2 = Figure(size=(1600, 800), backgroundcolor=:white)
 
-# R = 1.4
-ax1 = Axis3(fig2[1, 1], 
-    title="R = 1.4 a.u.", 
-    titlesize=36,
-    viewmode=:fitzoom,
-    perspectiveness=0.5,
-    limits=(-4, 4, -4, 4, -4, 4),
-    backgroundcolor=:white
-)
-density3d_1 = zeros(Float64, 50, 50, 50)
-compute_3d_density!(density3d_1, range(-4, 4, 50), range(-4, 4, 50), range(-4, 4, 50), 1.4, [0.7, 0.7])
-volume!(
-    ax1,
-    (-4, 4), (-4, 4), (-4, 4),
-    density3d_1,
-    algorithm=:mip,
-    colormap=:inferno,
-    colorrange=(0, 1*maximum(density3d_1)),
-    transparency=false
-)
+    # R = 1.4
+    ax1 = Axis3(fig2[1, 1], 
+        title="R = 1.4 a.u.", 
+        titlesize=36,
+        viewmode=:fitzoom,
+        perspectiveness=0.5,
+        limits=(-4, 4, -4, 4, -4, 4),
+        backgroundcolor=:white
+    )
+    density3d_1 = zeros(Float64, 50, 50, 50)
+    compute_3d_density!(density3d_1, range(-4, 4, 50), range(-4, 4, 50), range(-4, 4, 50), 1.4, [0.7, 0.7])
+    volume!(
+        ax1,
+        (-4, 4), (-4, 4), (-4, 4),
+        density3d_1,
+        algorithm=:mip,
+        colormap=:inferno,
+        colorrange=(0, 1*maximum(density3d_1)),
+        transparency=false
+    )
 
-# R = 3.0
-ax2 = Axis3(fig2[1, 2], 
-    title="R = 3.0 a.u.", 
-    titlesize=36,
-    viewmode=:fitzoom,
-    perspectiveness=0.5,
-    limits=(-4, 4, -4, 4, -4, 4),
-    backgroundcolor=:white
-)
-density3d_2 = zeros(Float64, 50, 50, 50)
-compute_3d_density!(density3d_2, range(-4, 4, 50), range(-4, 4, 50), range(-4, 4, 50), 3.0, [0.7, 0.7])
-volume!(
-    ax2,
-    (-4, 4), (-4, 4), (-4, 4),
-    density3d_2,
-    algorithm=:mip,
-    colormap=:inferno,
-    colorrange=(0, 1*maximum(density3d_2)),
-    transparency=false
-)
+    # R = 3.0
+    ax2 = Axis3(fig2[1, 2], 
+        title="R = 3.0 a.u.", 
+        titlesize=36,
+        viewmode=:fitzoom,
+        perspectiveness=0.5,
+        limits=(-4, 4, -4, 4, -4, 4),
+        backgroundcolor=:white
+    )
+    density3d_2 = zeros(Float64, 50, 50, 50)
+    compute_3d_density!(density3d_2, range(-4, 4, 50), range(-4, 4, 50), range(-4, 4, 50), 3.0, [0.7, 0.7])
+    volume!(
+        ax2,
+        (-4, 4), (-4, 4), (-4, 4),
+        density3d_2,
+        algorithm=:mip,
+        colormap=:inferno,
+        colorrange=(0, 1*maximum(density3d_2)),
+        transparency=false
+    )
 
-save("electron_cloud_comparison.png", fig2, px_per_unit=3)
-@info "图2已保存为 electron_cloud_comparison.png"
+    save("electron_cloud_comparison.png", fig2, px_per_unit=3)
+    @info "图2已保存为 electron_cloud_comparison.png"
+end
 
 # ------------------------- 性能分析 -------------------------
 function measure_computation_time(R; L=4.0, n3d=50, n2d=80)
@@ -318,62 +323,22 @@ function measure_computation_time(R; L=4.0, n3d=50, n2d=80)
     return total_time
 end
 
-# ji算时间曲线
-#function plot_computation_time_curve()
-    # """
-    # 绘制计算时间随核间距变化的曲线
-    
-    # 保存图片用的
-    # """
-#    Rs = 0.8:0.002:3.0 
-#    times = Float64[]
-    
-    # 测量每个R的计算时间
-#    for R in Rs
-#        t = measure_computation_time(R, n3d=50, n2d=80)
-#        push!(times, t)
-#        print("R = $R, Time = $t s\r")
-#    end
-#    @info "\n计算时间测量完成"
-    
-
-#    Rs = 0.8:0.1:3.0 
-#    times = [mean(@elapsed solve_variational(R) for _ in 1:5) for R in Rs]
-#    avg_time = mean(times)
-#    percent_error = std(times) / avg_time * 100
-#    @info "Average time: $avg_time s, Percent error: $percent_error%"
-
-#    fig = Figure(size=(800, 600), backgroundcolor=:white)
-#    ax = Axis(fig[1, 1],
-#         title="计算时间随核间距变化",
-#         titlesize=36,
-#         xlabel="核间距 R (原子单位)",
-#         xlabelsize=25,
-#         ylabel="计算时间 (秒)",
-#         ylabelsize=25,
-#         xgridcolor=:lightgray,
-#         ygridcolor=:lightgray,
-#         backgroundcolor=:white
-#     )
-    
-#     lines!(ax, Rs, times, color=:black, linewidth=1)
-#     #scatter!(ax, Rs, times, color=:red, markersize=10)
-    
-#     #axislegend(ax, position=:rt)
-#     save("computation_time_curve.png", fig, px_per_unit=3)
-#     @info "计算时间曲线已保存为 computation_time_curve.png"
-# end
 
 # 改进计时方法（预编译+统计预热）
 function plot_computation_time_curve()
-    solve_variational(1.4)  # 预编译
-    Rs = 0.6:0.1:5.0
-    times = [median([@elapsed solve_variational(R) for _ in 1:10]) for R in Rs]
+    #solve_variational(1.4)  # 预编译
+    Rs = 0.1:0.1:19.0
+    
+    # 预编译
+    for R in Rs
+        measure_computation_time(R)
+    end
+    times = [median([@elapsed measure_computation_time(R) for _ in 1:10]) for R in Rs]
     
     # 计算统计量
     avg_time = mean(times)
     percent_error = std(times)/avg_time*100
-    @info "平均计算时间: $avg_time s, 百分误差: $(round(percent_error, digits=2))%"
+    @info "平均计算时间: $avg_time s, 百分误差: $(round(percent_error, digits=2))%, 最小值$(minimum(times))"
 
     fig = Figure(size=(800, 600), backgroundcolor=:white)
     ax = Axis(fig[1, 1],
@@ -406,15 +371,6 @@ visualize_electron_cloud(0.8, L=4.0, n3d=50, n2d=80, name="08_electron_cloud.png
 energy_1_4 = solve_variational(1.4).energy
 @info "氢原子基态能量 (R=1.4): $(energy_1_4) Hartree"
 
-# 氢原子基态能量  理论-0.5 Hartree
-#@info "Hydrogen atom ground state energy: -0.5 Hartree"
-#@test isapprox(solve_variational(1.4).energy, -1.16, atol=0.05)
-#@test isapprox(solve_variational(Inf).energy, -1.0, atol=0.01)  
-
-# 计算解离极限能量-应趋近于两个氢原子总能量
-#energy_inf = solve_variational(100.0).energy
-#@info "R=100时基态能量: $(energy_inf)"
-#@assert isapprox(energy_inf, -1.0, atol=0.1)  
 
 function validate_dissociation_limit()
     R_values = [50.0, 100.0, 200.0]
