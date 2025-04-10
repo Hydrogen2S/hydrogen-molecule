@@ -367,7 +367,7 @@ end
 # 改进计时方法（预编译+统计预热）
 function plot_computation_time_curve()
     solve_variational(1.4)  # 预编译
-    Rs = 0.8:0.1:3.0
+    Rs = 0.6:0.1:5.0
     times = [median([@elapsed solve_variational(R) for _ in 1:10]) for R in Rs]
     
     # 计算统计量
